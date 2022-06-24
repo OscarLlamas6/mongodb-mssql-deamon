@@ -42,7 +42,7 @@ async function startDeamon(){
     while(true){          
         await activeDeamon()
         console.log(contador)
-        await delay(6000)
+        await delay(100000)
     }  
 }      
 
@@ -105,8 +105,6 @@ async function activeDeamon(): Promise<void> {
         // Conectando a MSSQL
         await connectMSSQLWithRetry();
 
-        
-       
         // Revisando conexion a MongoDB
         console.log("Estado MongoDB: ", mongoose.STATES[mongoose.connection.readyState])
 
@@ -116,9 +114,20 @@ async function activeDeamon(): Promise<void> {
         contador++;  
        
         // LOGIC
-        console.log("")
-        console.log('BUSINESS LOGIC');
-        console.log("")
+        const results = await mssqlConn.request()
+            .execute(`GetAllData`);
+        
+        let newResults:any[] = [];
+
+        for (let i = 0; i < results.rowsAffected[0]; i++) {
+            newResults.push(results.recordset[i]);
+        }
+
+        console.log(newResults)
+
+
+
+        // -----------------------------------------------------------------------------
         
         // Closing mongoDB conn
         mongoConn.close()
