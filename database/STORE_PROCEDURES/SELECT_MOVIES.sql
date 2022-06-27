@@ -18,7 +18,7 @@ BEGIN TRANSACTION ADD_MOVIE
                R.numVotes
         FROM Title t
                  INNER JOIN [IMDB_SERVER].[IMDB].[DBO].Rating R ON R.titleId = t.idIMDB
-                 INNER JOIN Director D on t.id = D.titleId
+                 INNER JOIN [IMDB_SERVER].[IMDB].[DBO].Director D on t.idIMDB = D.titleId
                  INNER JOIN Name N on D.nameId = N.id
             ;
         COMMIT TRANSACTION
