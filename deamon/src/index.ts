@@ -39,8 +39,8 @@ let deamondActive = false;
 
 async function startDeamon(){
     while(true){          
-        await activeDeamon()
         deamondActive = true;
+        await activeDeamon()
         //console.log(contador)
         await delay(10000)
     }  
