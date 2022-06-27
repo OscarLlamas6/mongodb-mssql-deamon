@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import sql from "mssql";
 import dotenv from 'dotenv';
+const Schema = mongoose.Schema
 dotenv.config();
 
 const DB_RETRY_TIME = process.env.DB_RETRY_TIME || 2000;
@@ -19,10 +20,8 @@ const MSSQLSV_PASS = process.env.MSSQLSV_PASS || 'root';
 const MSSQLSV_NAME = process.env.MSSQLSV_NAME || 'database';
 const MSSQLSV_HOST = process.env.MSSQLSV_HOST || 'localhost';
 
-
 // Seteando URL de conexion
-const MONGODB_URL = `mongodb://${MONGODB_USER}:${MONGODB_PASS}@${MONGODB_HOST}:${MONGODB_PORT}/?authSource=admin&readPreference=primary&directConnection=true&ssl=false`;
-
+const MONGODB_URL = `mongodb://${MONGODB_USER}:${MONGODB_PASS}@${MONGODB_HOST}:${MONGODB_PORT}/${MONGODB_NAME}?authSource=admin&readPreference=primary&directConnection=true&ssl=false`;
 
 export const msSQLSettings = {
     user: MSSQLSV_USER,
@@ -35,14 +34,15 @@ export const msSQLSettings = {
     },
   };
 
-
 let contador = 0;
+let deamondActive = false;
 
 async function startDeamon(){
     while(true){          
         await activeDeamon()
-        console.log(contador)
-        await delay(100000)
+        deamondActive = true;
+        //console.log(contador)
+        await delay(10000)
     }  
 }      
 
@@ -56,9 +56,12 @@ let connectMongoWithRetry = async function () {
     await mongoose.connect(MONGODB_URL);
 
    // Si hay un error de conexion a Mongo reintentar
-   mongoConn.on('error', async () => {
+   
+};
+
+mongoConn.on('error', async () => {
     mongoDBAttempts++;
-    if(mongoDBAttempts<=10){
+    if(mongoDBAttempts<=10 && deamondActive){
         setTimeout( async () => {
             console.log('MongoDB connection failed. Will try again.');
             await connectMongoWithRetry();
@@ -66,9 +69,8 @@ let connectMongoWithRetry = async function () {
     } else {
         throw new Error('MongoDB connection failed after 10 attempts. Exit program.');
     }
-    });
+});
 
-};
 
 // Funcion para conectar a MSSQL con retry si se desconecta
 let mssqlConn = new sql.ConnectionPool(msSQLSettings);
@@ -76,19 +78,21 @@ let connectMSSQLWithRetry = async function () {
     
     await mssqlConn.connect();
 
-    mssqlConn.on('error', async () => {
-        MSSQLAttempts++;
-        if(MSSQLAttempts<=10){
-            setTimeout( async () => {
-                console.log('MSSQL SV DB connection failed. Will try again.');
-                await connectMSSQLWithRetry();
-          }, Number(DB_RETRY_TIME));
-        } else {
-            throw new Error('MSSQL SV DB connection failed after 10 attempts. Exit program.');
-        }       
-    });
+    
 
 }
+
+mssqlConn.on('error', async () => {
+    MSSQLAttempts++;
+    if(MSSQLAttempts<=10 && deamondActive){
+        setTimeout( async () => {
+            console.log('MSSQL SV DB connection failed. Will try again.');
+            await connectMSSQLWithRetry();
+      }, Number(DB_RETRY_TIME));
+    } else {
+        throw new Error('MSSQL SV DB connection failed after 10 attempts. Exit program.');
+    }       
+});
 
 function delay(ms: number) {
     return new Promise( resolve => setTimeout(resolve, ms) );
@@ -102,6 +106,8 @@ async function activeDeamon(): Promise<void> {
 
         // Conectando a MongoDB
         await connectMongoWithRetry();
+        let netflixSchema = new Schema({}, { strict: false, collection: "netflix" });
+        let Netflix =  mongoose.models.Netflix || mongoose.model('Netflix', netflixSchema);
         // Conectando a MSSQL
         await connectMSSQLWithRetry();
 
@@ -110,32 +116,49 @@ async function activeDeamon(): Promise<void> {
 
         // Revisando conexion a MSSQL
         let MSSQLstatus = mssqlConn.connected ? "connected" : "disconnected";
-        console.log("Estado MSSQL: ", MSSQLstatus)
-        contador++;  
+        console.log("Estado MSSQL: ", MSSQLstatus);
        
         // LOGIC
         const results = await mssqlConn.request()
             .execute(`GetAllData`);
         
-        let newResults:any[] = [];
+        //let newResults:any[] = [];
 
+        
         for (let i = 0; i < results.rowsAffected[0]; i++) {
-            newResults.push(results.recordset[i]);
+            //newResults.push(results.recordset[i]);       
+
+            const options = {
+                upsert: true,
+                new: true,
+                runValidators: true,
+                setDefaultsOnInsert: true,
+                rawResult: true,
+            };
+
+            try {
+                const mongoResult = await Netflix.findOneAndUpdate({ id: results.recordset[i].id }, results.recordset[i], options);
+                if(mongoResult.lastErrorObject.upserted){
+                    console.log("Registro creado en MongoDB exitosamente :D");
+                }
+            } catch (error) {
+                console.log("Error al crear registro en MongoDB :(");
+            }
+
+            
         }
 
-        console.log(newResults)
-
-
-
+        //console.log(newResults)
         // -----------------------------------------------------------------------------
         
         // Closing mongoDB conn
-        mongoConn.close()
-        console.log("Estado MongoDB: ", mongoose.STATES[mongoose.connection.readyState])
+        await mongoConn.close()
+        await mongoose.disconnect();
+        console.log("Estado MongoDB: ", mongoose.STATES[mongoose.connection.readyState]);
         // Revisando conexion a MSSQL
-        mssqlConn.close();
+        await mssqlConn.close();
         MSSQLstatus = mssqlConn.connected ? "connected" : "disconnected";
-        console.log("Estado MSSQL: ", MSSQLstatus)
+        console.log("Estado MSSQL: ", MSSQLstatus);
         
     } catch (error) {
         console.log('Unexpected error: ',error);
