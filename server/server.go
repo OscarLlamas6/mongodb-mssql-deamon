@@ -156,7 +156,7 @@ func main() {
 	//Rutas
 	r.POST("/executeMovie", CreateMovie)
 
-	//Se inicia el servidor en el puerto 3008
+	//Se inicia el servidor en el puerto 9000
 	r.Run(direccion)
 
 }
