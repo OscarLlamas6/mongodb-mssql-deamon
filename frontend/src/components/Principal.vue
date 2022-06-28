@@ -34,10 +34,10 @@
               </b-form-group>
 
               <b-form-group id="input-group-3" label-for="input-3">
-                <b-form-select id="input-3" v-model="form.booleans" :options="booleans" required></b-form-select>
+                <b-form-select id="input-3" v-model="form.isAdult" :options="booleans" required></b-form-select>
               </b-form-group>
 
-              <b-button block variant="primary">Insertar película</b-button>
+              <b-button block type ="submit" variant="primary">Insertar película</b-button>
             </b-form>
 
           </div>
@@ -55,6 +55,7 @@
 </template>
 
 <script>
+
 export default {
   name: 'TablaPrincipal',
 
@@ -63,7 +64,7 @@ export default {
       form: {
         primaryName: '',
         originalName: '',
-        booleans: null,
+        isAdult: null,
         startYear: '',
         endYear: '',
         runtime: ''
@@ -80,7 +81,25 @@ export default {
   methods: {
     onSubmit(event) {
       event.preventDefault()
-      alert(JSON.stringify(this.form))
+
+      if(this.form.isAdult === 'No'){
+        this.form.isAdult = false
+      }else if(this.form.isAdult === 'Si'){
+        this.form.isAdult = true
+      }else{
+        return;
+      }
+      let data = {
+          primaryName: this.form.primaryName,
+          originalName: this.form.originalName,
+          isAdult : this.form.isAdult,
+          startYear: Number(this.form.startYear),
+          endYear: Number(this.form.endYear),
+          runtime: Number(this.form.runtime)
+      }
+      this.axios.post("http://localhost:9000/executeMovie", data)
+    .then(response => console.log(response))
+     
     },
     onReset(event) {
       event.preventDefault()
