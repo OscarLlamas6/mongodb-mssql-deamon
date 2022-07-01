@@ -1,0 +1,102 @@
+
+<nav class="navbar navbar-expand-lg bg-light">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Netflix movies and series</a>
+  </div>
+</nav>
+
+<div>
+  <!-- Button trigger modal -->
+  <div class="abs-center">
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+      Send your movie to our servers
+    </button>
+  </div>
+
+</div>
+
+<div class="container-sm">
+  <table class="table">
+    <thead>
+
+      <tr>
+        <th scope="col">id</th>
+        <th scope="col">_id</th>
+        <th scope="col">primaryTitle</th>
+        <th scope="col">originalTitle</th>
+        <th scope="col">Director</th>
+        <th scope="col">isAdult</th>
+        <th scope="col">startYear</th>
+        <th scope="col">endYear</th>
+        <th scope="col">runtime</th>
+        <th scope="col">numVotes</th>
+        <th scope="col">averageRating</th>
+
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of received">
+        <th scope="row">{{item.id}}</th>
+        <td>{{item._id}}</td>
+        <td>{{item.primaryTitle}}</td>
+        <td>{{item.originalTitle}}</td>
+        <td>{{item.primaryName}}</td>
+        <td>{{item.isAdult}}</td>
+        <td>{{item.startYear}}</td>
+        <td>{{item.endYear}}</td>
+        <td>{{item.runtime}}</td>
+        <td>{{item.numVotes}}</td>
+        <td>{{item.averageRating}}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Send your movie</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" [(ngModel)]="primaryName" placeholder="Ozark">
+          <label for="primaryMovie">Primary name</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="text" class="form-control" [(ngModel)]="originalName" placeholder="Ozark name">
+          <label for="primaryMovie">Original name</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="number" class="form-control" [(ngModel)]="startYear" placeholder="2016">
+          <label for="primaryMovie">Start year</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="number" class="form-control" [(ngModel)]="endYear" placeholder="2020">
+          <label for="primaryMovie">End year</label>
+        </div>
+        <div class="form-floating mb-3">
+          <input type="number" class="form-control" [(ngModel)]="runtime" placeholder="45">
+          <label for="primaryMovie">Runtime in minutes</label>
+        </div>
+
+        <div class="form-floating">
+          <select class="form-select" [(ngModel)]="isAdult" aria-label="Floating label select example">
+            <option selected></option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+          <label for="floatingSelect">Is adult?</label>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" (click)="sendMovie()">Send movie</button>
+      </div>
+    </div>
+  </div>
+</div>
+<router-outlet></router-outlet>

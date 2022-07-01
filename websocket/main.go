@@ -41,5 +41,5 @@ func main() {
 	router.HandleFunc("/socket", SetupResponse(RunSocket)).Methods(http.MethodGet, http.MethodOptions)
 	router.Use(mux.CORSMethodMiddleware(router))
 	fmt.Println("!... Starting server on port 8080 ...!")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":9001", router))
 }
